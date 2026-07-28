@@ -54,6 +54,7 @@ export async function createScheduledJobs(input: ScheduleEmailInput) {
       subject: input.subject,
       body: input.body,
       senderEmail: input.senderEmail,
+      maxPerHour: input.maxPerHour,
     };
 
     const bullJob = await emailQueue.add('send-email', jobData, {

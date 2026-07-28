@@ -10,6 +10,7 @@ export interface EmailJobData {
   subject: string;
   body: string;
   senderEmail: string;
+  maxPerHour?: number;
 }
 
 export const emailQueue = new Queue<EmailJobData>(EMAIL_QUEUE_NAME, {

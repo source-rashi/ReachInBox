@@ -9,18 +9,16 @@ const CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '3');
 const MIN_DELAY = parseInt(process.env.MIN_DELAY_MS_BETWEEN_SENDS || '2000');
 
 async function processEmailJob(job: Job<EmailJobData>) {
-  const { emailJobId, senderId, recipientEmail, subject, body, senderEmail } = job.data;
+  const { emailJobId, senderId, recipientEmail, subject, body, senderEmail, maxPerHour } = job.data;
 
-  // Idempotency: if already sent, skip
   const existing = await prisma.emailJob.findUnique({ where: { id: emailJobId } });
   if (!existing || existing.status === 'sent') {
-    return;
+    return; // already sent or deleted — skip
   }
 
-  const rateCheck = await checkAndIncrement(senderId);
+  const rateCheck = await checkAndIncrement(senderId, maxPerHour);
 
   if (!rateCheck.allowed) {
-    // Reschedule into next hour window — never drop
     const retryDelay = Math.max(rateCheck.retryAfterMs, MIN_DELAY);
     console.log(`rate limited sender ${senderId}, requeuing job ${emailJobId} in ${retryDelay}ms`);
 
@@ -45,11 +43,17 @@ async function processEmailJob(job: Job<EmailJobData>) {
   try {
     const result = await sendEmail(senderEmail, recipientEmail, subject, body);
 
-    await prisma.sendLog.create({
-      data: {
+    await prisma.sendLog.upsert({
+      where: { emailJobId },
+      create: {
         emailJobId,
         messageId: result.messageId,
         etherealUrl: result.etherealUrl,
+      },
+      update: {
+        messageId: result.messageId,
+        etherealUrl: result.etherealUrl,
+        error: null,
       },
     });
 
@@ -60,11 +64,10 @@ async function processEmailJob(job: Job<EmailJobData>) {
 
     console.log(`sent ${emailJobId} → ${recipientEmail} (${result.etherealUrl || 'no preview'})`);
   } catch (err: any) {
-    await prisma.sendLog.create({
-      data: {
-        emailJobId,
-        error: err.message,
-      },
+    await prisma.sendLog.upsert({
+      where: { emailJobId },
+      create: { emailJobId, error: err.message },
+      update: { error: err.message },
     });
 
     await prisma.emailJob.update({
@@ -75,7 +78,6 @@ async function processEmailJob(job: Job<EmailJobData>) {
     throw err;
   }
 
-  // Throttle between sends
   if (MIN_DELAY > 0) {
     await new Promise(r => setTimeout(r, MIN_DELAY));
   }
