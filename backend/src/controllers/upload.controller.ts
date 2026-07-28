@@ -12,9 +12,13 @@ export async function uploadCsv(req: Request, res: Response) {
       columns: true,
       skip_empty_lines: true,
       trim: true,
+      relax_column_count: true,
     });
 
-    // Try to detect email column — look for common header names
+    if (!records || records.length === 0) {
+      return res.status(400).json({ error: 'CSV file is empty or has no data rows' });
+    }
+
     const headers = Object.keys(records[0] || {});
     const emailCol = headers.find(h =>
       /^(email|e-mail|mail|email_address|emailaddress)$/i.test(h)
