@@ -20,9 +20,15 @@ export default function ComposeModal({ onClose }: { onClose: () => void }) {
   const [body, setBody] = useState('<p>Hi {{name}},</p>\n<p>Thank you for joining ReachInBox!</p>');
   
   // Default scheduledFor to current date/time in YYYY-MM-THH:mm format
-  const nowStr = new Date(Date.now() + 60000).toISOString().slice(0, 16);
-  const [scheduledFor, setScheduledFor] = useState(nowStr);
-  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const defaultTimeStr = `${year}-${month}-${day}T${hours}:${mins}`;
+
+  const [scheduledFor, setScheduledFor] = useState(defaultTimeStr);
   const [delayMs, setDelayMs] = useState(2000);
   const [maxPerHour, setMaxPerHour] = useState(100);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -48,7 +54,6 @@ export default function ComposeModal({ onClose }: { onClose: () => void }) {
   const getEffectiveLeads = (): Lead[] => {
     if (inputMode === 'csv') return leads;
     
-    // Parse manual text (lines formatted as email, name or email)
     return manualText
       .split('\n')
       .map((line) => {
@@ -73,30 +78,39 @@ export default function ComposeModal({ onClose }: { onClose: () => void }) {
       toast.error('Subject and body are required');
       return;
     }
-    if (!scheduledFor) {
-      toast.error('Pick a start time');
-      return;
+
+    let validScheduledDate = new Date();
+    if (scheduledFor) {
+      const parsed = new Date(scheduledFor);
+      if (!isNaN(parsed.getTime())) {
+        validScheduledDate = parsed;
+      }
     }
 
     setSubmitting(true);
     try {
+      const senderEmail = session?.user?.email && session.user.email.includes('@')
+        ? session.user.email
+        : 'rashiagrawal1801@gmail.com';
+
       const result = await scheduleEmails({
-        senderEmail: session?.user?.email || 'sender@reachinbox.com',
+        senderEmail,
         senderName: session?.user?.name || 'ReachInBox User',
         recipients: effectiveLeads,
         subject,
         body,
-        scheduledFor: new Date(scheduledFor).toISOString(),
+        scheduledFor: validScheduledDate.toISOString(),
         delayBetweenMs: delayMs,
         maxPerHour,
       });
 
       toast.success(`Scheduled ${result.scheduled} emails`);
-      if (result.skipped?.length > 0) {
+      if (result.skipped && result.skipped.length > 0) {
         toast(`${result.skipped.length} duplicates skipped`, { icon: '⚠️' });
       }
       onClose();
     } catch (err: any) {
+      console.error('Submit error:', err);
       toast.error(err.message || 'Failed to schedule');
     } finally {
       setSubmitting(false);
