@@ -163,13 +163,17 @@ Each job gets a dedupe key = `SHA-256(recipientEmail | subject | scheduledFor)`.
 
 3. **No per-campaign grouping**: Jobs are individual rows. A campaign abstraction could be added but isn't needed for the core scheduling + rate limiting demo.
 
-4. **Rate limit per sender, not per recipient domain**: Some production systems rate limit per-domain (e.g. max 50/hr to gmail.com). This implementation limits per sender, which is the more common use case for outreach tools.
+4. **Sender = logged-in user's email**: There's no separate sender management UI. The sender is auto-created from the Google OAuth session email on first schedule. This means the "from" address in emails is the user's Google email, which Ethereal accepts but a real SMTP provider would likely reject without domain verification.
 
-5. **Frontend proxy**: Next.js rewrites proxy API calls to the backend. In production, you'd use a reverse proxy (nginx, Cloudflare) instead.
+5. **Rate limit per sender, not per recipient domain**: Some production systems rate limit per-domain (e.g. max 50/hr to gmail.com). This implementation limits per sender, which is the more common use case for outreach tools. The per-campaign `maxPerHour` from the frontend overrides the env-level default when provided.
 
-6. **CSV size limit**: 5MB max file size for CSV uploads. Large lead lists should be paginated or streamed.
+6. **Frontend proxy**: Next.js rewrites proxy API calls to the backend. In production, you'd use a reverse proxy (nginx, Cloudflare) instead.
 
-7. **No email templating engine**: The body is sent as raw HTML. A Handlebars/Mustache layer for `{{name}}` interpolation would be a natural next step.
+7. **CSV size limit**: 5MB max file size for CSV uploads. Large lead lists should be paginated or streamed.
+
+8. **No email templating engine**: The body is sent as raw HTML. A Handlebars/Mustache layer for `{{name}}` interpolation would be a natural next step.
+
+9. **Rate limit Lua script**: Uses check-before-increment (not increment-then-check) to avoid the race where concurrent workers both increment past the limit. The Lua script is atomic within Redis.
 
 ## Tech Stack
 
