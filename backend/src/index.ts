@@ -12,7 +12,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+const allowedFrontend = process.env.FRONTEND_URL?.replace(/\/$/, '');
+const allowedOrigins = allowedFrontend ? [allowedFrontend, 'http://localhost:3000'] : ['http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
