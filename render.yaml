@@ -10,19 +10,24 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: reachinbox-db
+          property: connectionString
       - key: REDIS_URL
-        sync: false
+        fromService:
+          type: redis
+          name: reachinbox-redis
+          property: connectionString
       - key: FRONTEND_URL
-        sync: false
+        value: https://reachinbox-app-theta.vercel.app
       - key: SMTP_HOST
         value: smtp.ethereal.email
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        sync: false
+        value: cyekcvklhync3xgu@ethereal.email
       - key: SMTP_PASS
-        sync: false
+        value: 3aBG5H9eHyRTEy96BR
       - key: MAX_EMAILS_PER_HOUR_PER_SENDER
         value: "100"
       - key: MIN_DELAY_MS_BETWEEN_SENDS
