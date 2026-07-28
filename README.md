@@ -7,7 +7,6 @@ Production-grade email scheduling system built with BullMQ delayed jobs, Redis-b
 - 🌐 **Live Website (Vercel)**: [https://reachinbox-app-theta.vercel.app](https://reachinbox-app-theta.vercel.app)
 - ⚡ **Live Backend API (Render)**: [https://reachinbox-backend-39mw.onrender.com](https://reachinbox-backend-39mw.onrender.com)
 - 💓 **Backend Health Endpoint**: [https://reachinbox-backend-39mw.onrender.com/health](https://reachinbox-backend-39mw.onrender.com/health)
-- 📦 **GitHub Repository**: [https://github.com/source-rashi/ReachInBox](https://github.com/source-rashi/ReachInBox)
 
 ---
 
@@ -59,12 +58,9 @@ Production-grade email scheduling system built with BullMQ delayed jobs, Redis-b
 - Docker + Docker Compose (for Postgres + Redis)
 - Google Cloud OAuth 2.0 credentials
 
-### 1. Clone and install
+### 1. Install Dependencies
 
 ```bash
-git clone https://github.com/source-rashi/ReachInBox.git
-cd ReachInBox
-
 # Backend
 cd backend
 npm install
