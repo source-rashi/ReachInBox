@@ -77,24 +77,32 @@ This starts PostgreSQL (port 5432) and Redis (port 6379).
 
 ### 3. Configure environment
 
+**Backend** — copy the example and fill in SMTP credentials:
 ```bash
 cp .env.example backend/.env
-cp .env.example frontend/.env.local
 ```
 
-Edit both files:
+**Frontend** — create `frontend/.env.local` with only the auth vars:
+```bash
+cat > frontend/.env.local << 'EOF'
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=change-me-to-a-random-string
+EOF
+```
 
-| Variable | Where | Description |
+| Variable | File | Description |
 |---|---|---|
-| `DATABASE_URL` | backend | Postgres connection string |
-| `REDIS_URL` | backend | Redis connection string |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | backend | Ethereal credentials |
-| `MAX_EMAILS_PER_HOUR_PER_SENDER` | backend | Rate limit per sender (default: 100) |
-| `MIN_DELAY_MS_BETWEEN_SENDS` | backend | Throttle between sends (default: 2000) |
-| `WORKER_CONCURRENCY` | backend | BullMQ worker concurrency (default: 3) |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | frontend | Google OAuth credentials |
-| `NEXTAUTH_URL` | frontend | Frontend URL (default: http://localhost:3000) |
-| `NEXTAUTH_SECRET` | frontend | Random string for JWT signing |
+| `DATABASE_URL` | backend/.env | Postgres connection string |
+| `REDIS_URL` | backend/.env | Redis connection string |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | backend/.env | Ethereal credentials |
+| `MAX_EMAILS_PER_HOUR_PER_SENDER` | backend/.env | Rate limit per sender (default: 100) |
+| `MIN_DELAY_MS_BETWEEN_SENDS` | backend/.env | Throttle between sends (default: 2000) |
+| `WORKER_CONCURRENCY` | backend/.env | BullMQ worker concurrency (default: 3) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | frontend/.env.local | Google OAuth credentials |
+| `NEXTAUTH_URL` | frontend/.env.local | Frontend URL (default: http://localhost:3000) |
+| `NEXTAUTH_SECRET` | frontend/.env.local | Random string for JWT signing |
 
 ### 4. Generate Ethereal credentials
 
@@ -112,9 +120,12 @@ Go to [https://ethereal.email](https://ethereal.email) and click "Create Etherea
 
 ```bash
 cd backend
-npx prisma migrate dev --name init
+npx prisma generate
+npx prisma migrate deploy
 cd ..
 ```
+
+> If this is your first time and migrations haven't been created yet, use `npx prisma migrate dev --name init` instead.
 
 ### 7. Start the application
 
