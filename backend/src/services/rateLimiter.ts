@@ -2,20 +2,23 @@ import { createRedisConnection } from '../lib/redis';
 
 const redis = createRedisConnection();
 
-const MAX_PER_HOUR = parseInt(process.env.MAX_EMAILS_PER_HOUR_PER_SENDER || '100');
-
-// Lua script for atomic increment-and-check within the current hour window.
-// Returns [current_count, ttl_remaining]. If count exceeds limit, the caller
-// must reschedule rather than send.
-const LUA_INCREMENT = `
+// Lua script for atomic check-and-increment within the current hour window.
+// Only increments if under the limit. Returns [allowed (0/1), current_count, ttl_remaining].
+const LUA_CHECK_AND_INCREMENT = `
   local key = KEYS[1]
   local limit = tonumber(ARGV[1])
-  local current = redis.call('INCR', key)
-  if current == 1 then
+  local current = tonumber(redis.call('GET', key) or "0")
+  if current >= limit then
+    local ttl = redis.call('TTL', key)
+    if ttl < 0 then ttl = 3600 end
+    return {0, current, ttl}
+  end
+  local newCount = redis.call('INCR', key)
+  if newCount == 1 then
     redis.call('EXPIRE', key, 3600)
   end
   local ttl = redis.call('TTL', key)
-  return {current, ttl}
+  return {1, newCount, ttl}
 `;
 
 function getHourBucket(): string {
@@ -29,20 +32,19 @@ export interface RateLimitResult {
   retryAfterMs: number;
 }
 
-export async function checkAndIncrement(senderId: string): Promise<RateLimitResult> {
+export async function checkAndIncrement(senderId: string, maxPerHour?: number): Promise<RateLimitResult> {
+  const limit = maxPerHour || parseInt(process.env.MAX_EMAILS_PER_HOUR_PER_SENDER || '100');
   const bucket = getHourBucket();
   const key = `ratelimit:${senderId}:${bucket}`;
 
-  const result = await redis.eval(LUA_INCREMENT, 1, key, MAX_PER_HOUR) as [number, number];
-  const [currentCount, ttlSeconds] = result;
+  const result = await redis.eval(LUA_CHECK_AND_INCREMENT, 1, key, limit) as [number, number, number];
+  const [allowed, currentCount, ttlSeconds] = result;
 
-  if (currentCount > MAX_PER_HOUR) {
-    // Decrement back since we won't actually send
-    await redis.decr(key);
+  if (!allowed) {
     return {
       allowed: false,
-      currentCount: currentCount - 1,
-      retryAfterMs: ttlSeconds * 1000 + 1000, // wait for next window + 1s buffer
+      currentCount,
+      retryAfterMs: ttlSeconds * 1000 + 1000,
     };
   }
 
