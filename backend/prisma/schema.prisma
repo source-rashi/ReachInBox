@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Sender {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  name      String?
+  createdAt DateTime   @default(now()) @map("created_at")
+  jobs      EmailJob[]
+
+  @@map("senders")
+}
+
+model EmailJob {
+  id             String    @id @default(uuid())
+  senderId       String    @map("sender_id")
+  recipientEmail String    @map("recipient_email")
+  subject        String
+  body           String
+  scheduledFor   DateTime  @map("scheduled_for")
+  status         String    @default("scheduled") // scheduled | queued | sending | sent | failed
+  dedupeKey      String    @unique @map("dedupe_key")
+  bullJobId      String?   @map("bull_job_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  sender   Sender    @relation(fields: [senderId], references: [id])
+  sendLog  SendLog?
+
+  @@index([status])
+  @@index([senderId])
+  @@map("email_jobs")
+}
+
+model SendLog {
+  id          String   @id @default(uuid())
+  emailJobId  String   @unique @map("email_job_id")
+  messageId   String?  @map("message_id")
+  etherealUrl String?  @map("ethereal_url")
+  sentAt      DateTime @default(now()) @map("sent_at")
+  error       String?
+
+  emailJob EmailJob @relation(fields: [emailJobId], references: [id])
+
+  @@map("send_logs")
+}
