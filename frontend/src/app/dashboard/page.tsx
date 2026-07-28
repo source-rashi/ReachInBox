@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<'scheduled' | 'sent'>('scheduled');
   const [showCompose, setShowCompose] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   if (status === 'loading') {
     return (
@@ -23,6 +24,11 @@ export default function DashboardPage() {
   if (!session) {
     redirect('/login');
   }
+
+  const handleComposeClose = () => {
+    setShowCompose(false);
+    setRefreshKey(k => k + 1);
+  };
 
   return (
     <div className="min-h-screen">
@@ -66,10 +72,10 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <JobTable tab={activeTab} />
+        <JobTable tab={activeTab} refreshKey={refreshKey} />
       </main>
 
-      {showCompose && <ComposeModal onClose={() => setShowCompose(false)} />}
+      {showCompose && <ComposeModal onClose={handleComposeClose} />}
     </div>
   );
 }

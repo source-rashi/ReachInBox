@@ -1,26 +1,34 @@
 const API_BASE = '/api/backend';
 
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    let msg = `Request failed (${res.status})`;
+    try {
+      const err = await res.json();
+      msg = err.error || err.message || msg;
+    } catch {
+      // response wasn't JSON
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
 export async function fetchScheduled(page = 1, limit = 50) {
   const res = await fetch(`${API_BASE}/scheduled?page=${page}&limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch scheduled jobs');
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchSent(page = 1, limit = 50) {
   const res = await fetch(`${API_BASE}/sent?page=${page}&limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch sent jobs');
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function uploadCsv(file: File) {
   const form = new FormData();
   form.append('file', file);
   const res = await fetch(`${API_BASE}/upload-csv`, { method: 'POST', body: form });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Upload failed');
-  }
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function scheduleEmails(data: {
@@ -38,9 +46,5 @@ export async function scheduleEmails(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || 'Scheduling failed');
-  }
-  return res.json();
+  return handleResponse(res);
 }

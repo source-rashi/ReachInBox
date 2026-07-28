@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { fetchScheduled, fetchSent } from '@/lib/api';
 
 interface Job {
@@ -54,43 +55,40 @@ function LoadingRows() {
   );
 }
 
-export default function JobTable({ tab }: { tab: 'scheduled' | 'sent' }) {
+export default function JobTable({ tab, refreshKey }: { tab: 'scheduled' | 'sent'; refreshKey?: number }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
+    setError(null);
     const fetcher = tab === 'scheduled' ? fetchScheduled : fetchSent;
     fetcher()
       .then((data) => {
         setJobs(data.jobs);
         setTotal(data.total);
       })
-      .catch(console.error)
+      .catch((err) => {
+        setError('Could not load jobs — is the backend running?');
+        toast.error(err.message || 'Failed to fetch jobs');
+      })
       .finally(() => setLoading(false));
   }, [tab]);
 
-  const refresh = () => {
-    setLoading(true);
-    const fetcher = tab === 'scheduled' ? fetchScheduled : fetchSent;
-    fetcher()
-      .then((data) => {
-        setJobs(data.jobs);
-        setTotal(data.total);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  };
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-400">
-          {loading ? 'Loading...' : `${total} job${total !== 1 ? 's' : ''}`}
+          {loading ? 'Loading...' : error ? '' : `${total} job${total !== 1 ? 's' : ''}`}
         </p>
         <button
-          onClick={refresh}
+          onClick={load}
           disabled={loading}
           className="text-sm text-primary-400 hover:text-primary-300 transition-colors disabled:opacity-50"
         >
@@ -98,57 +96,66 @@ export default function JobTable({ tab }: { tab: 'scheduled' | 'sent' }) {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/10 text-left text-slate-400">
-              <th className="px-4 py-3 font-medium">Recipient</th>
-              <th className="px-4 py-3 font-medium">Subject</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">{tab === 'scheduled' ? 'Scheduled For' : 'Sent At'}</th>
-              {tab === 'sent' && <th className="px-4 py-3 font-medium">Preview</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {loading ? (
-              <LoadingRows />
-            ) : jobs.length === 0 ? (
-              <tr>
-                <td colSpan={tab === 'sent' ? 5 : 4}>
-                  <EmptyState message={tab === 'scheduled' ? 'No scheduled jobs yet' : 'No emails sent yet'} />
-                </td>
+      {error && !loading ? (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-8 text-center">
+          <p className="text-red-400 text-sm">{error}</p>
+          <button onClick={load} className="mt-3 text-xs text-primary-400 hover:text-primary-300 underline">
+            Try again
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-slate-400">
+                <th className="px-4 py-3 font-medium">Recipient</th>
+                <th className="px-4 py-3 font-medium">Subject</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">{tab === 'scheduled' ? 'Scheduled For' : 'Sent At'}</th>
+                {tab === 'sent' && <th className="px-4 py-3 font-medium">Preview</th>}
               </tr>
-            ) : (
-              jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-4 py-3 text-slate-200">{job.recipientEmail}</td>
-                  <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{job.subject}</td>
-                  <td className="px-4 py-3"><StatusBadge status={job.status} /></td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">
-                    {new Date(tab === 'sent' && job.sendLog?.sentAt ? job.sendLog.sentAt : job.scheduledFor).toLocaleString()}
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {loading ? (
+                <LoadingRows />
+              ) : jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={tab === 'sent' ? 5 : 4}>
+                    <EmptyState message={tab === 'scheduled' ? 'No scheduled jobs yet' : 'No emails sent yet'} />
                   </td>
-                  {tab === 'sent' && (
-                    <td className="px-4 py-3">
-                      {job.sendLog?.etherealUrl ? (
-                        <a
-                          href={job.sendLog.etherealUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-400 hover:text-primary-300 text-xs underline"
-                        >
-                          View
-                        </a>
-                      ) : (
-                        <span className="text-slate-500 text-xs">—</span>
-                      )}
-                    </td>
-                  )}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                jobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3 text-slate-200">{job.recipientEmail}</td>
+                    <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{job.subject}</td>
+                    <td className="px-4 py-3"><StatusBadge status={job.status} /></td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">
+                      {new Date(tab === 'sent' && job.sendLog?.sentAt ? job.sendLog.sentAt : job.scheduledFor).toLocaleString()}
+                    </td>
+                    {tab === 'sent' && (
+                      <td className="px-4 py-3">
+                        {job.sendLog?.etherealUrl ? (
+                          <a
+                            href={job.sendLog.etherealUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-400 hover:text-primary-300 text-xs underline"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-slate-500 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
