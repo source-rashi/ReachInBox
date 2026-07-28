@@ -4,10 +4,10 @@ import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('demo@reachinbox.com');
+  const [email, setEmail] = useState('user@example.com');
   const [loading, setLoading] = useState(false);
 
-  const handleDemoLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await signIn('credentials', { email, callbackUrl: '/dashboard' });
@@ -20,7 +20,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             ReachInBox
           </h1>
-          <p className="text-slate-400 text-lg">Email Job Scheduler</p>
+          <p className="text-slate-400 text-sm">Enterprise Email Campaign Scheduler</p>
         </div>
 
         <div className="backdrop-blur-xl bg-slate-900/80 border border-slate-800 rounded-2xl p-8 space-y-6 shadow-2xl">
@@ -42,12 +42,12 @@ export default function LoginPage() {
           </button>
 
           <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-slate-700"></div>
-            <span className="flex-shrink mx-4 text-xs text-slate-500 uppercase">Or quick login</span>
-            <div className="flex-grow border-t border-slate-700"></div>
+            <div className="flex-grow border-t border-slate-800"></div>
+            <span className="flex-shrink mx-4 text-xs text-slate-500 font-medium uppercase tracking-wider">Or continue with email</span>
+            <div className="flex-grow border-t border-slate-800"></div>
           </div>
 
-          <form onSubmit={handleDemoLogin} className="space-y-4 text-left">
+          <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
               <input
@@ -55,7 +55,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="you@example.com"
               />
             </div>
@@ -64,13 +64,13 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/20 disabled:opacity-50"
             >
-              {loading ? 'Logging in...' : 'Sign in with Email'}
+              {loading ? 'Signing in...' : 'Sign In with Email'}
             </button>
           </form>
         </div>
 
         <p className="text-slate-500 text-xs">
-          Production Job Scheduler • Powered by BullMQ & Redis
+          Production Job Scheduler • Powered by BullMQ & Redis Engine
         </p>
       </div>
     </div>
