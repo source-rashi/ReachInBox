@@ -1,18 +1,8 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('user@example.com');
-  const [loading, setLoading] = useState(false);
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    await signIn('credentials', { email, callbackUrl: '/dashboard' });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
       <div className="text-center space-y-8 p-6 w-full max-w-md">
@@ -30,7 +20,7 @@ export default function LoginPage() {
 
           <button
             onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 shadow-md"
+            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -40,33 +30,6 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-slate-800"></div>
-            <span className="flex-shrink mx-4 text-xs text-slate-500 font-medium uppercase tracking-wider">Or continue with email</span>
-            <div className="flex-grow border-t border-slate-800"></div>
-          </div>
-
-          <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="you@example.com"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/20 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign In with Email'}
-            </button>
-          </form>
         </div>
 
         <p className="text-slate-500 text-xs">
