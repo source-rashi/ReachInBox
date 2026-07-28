@@ -1,25 +1,36 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useState } from 'react';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('demo@reachinbox.com');
+  const [loading, setLoading] = useState(false);
+
+  const handleDemoLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    await signIn('credentials', { email, callbackUrl: '/dashboard' });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-8 p-10">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <div className="text-center space-y-8 p-6 w-full max-w-md">
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             ReachInBox
           </h1>
           <p className="text-slate-400 text-lg">Email Job Scheduler</p>
         </div>
 
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 max-w-sm mx-auto">
-          <p className="text-slate-300 text-sm">
+        <div className="backdrop-blur-xl bg-slate-900/80 border border-slate-800 rounded-2xl p-8 space-y-6 shadow-2xl">
+          <p className="text-slate-300 text-sm font-medium">
             Sign in to manage your email campaigns
           </p>
+
           <button
             onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 hover:shadow-lg hover:shadow-white/10"
+            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 shadow-md"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -29,10 +40,37 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-700"></div>
+            <span className="flex-shrink mx-4 text-xs text-slate-500 uppercase">Or quick login</span>
+            <div className="flex-grow border-t border-slate-700"></div>
+          </div>
+
+          <form onSubmit={handleDemoLogin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                placeholder="you@example.com"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/20 disabled:opacity-50"
+            >
+              {loading ? 'Logging in...' : 'Sign in with Email'}
+            </button>
+          </form>
         </div>
 
         <p className="text-slate-500 text-xs">
-          Powered by BullMQ + Redis rate limiting
+          Production Job Scheduler • Powered by BullMQ & Redis
         </p>
       </div>
     </div>
