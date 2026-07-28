@@ -9,7 +9,11 @@ export const scheduleEmailSchema = z.object({
   })).min(1),
   subject: z.string().min(1).max(998),
   body: z.string().min(1),
-  scheduledFor: z.string().datetime(),
+  // Accept ISO 8601 with or without timezone (datetime-local sends without Z)
+  scheduledFor: z.string().refine((val) => {
+    const d = new Date(val);
+    return !isNaN(d.getTime());
+  }, { message: 'Invalid date format' }),
   delayBetweenMs: z.number().int().min(0).optional(),
   maxPerHour: z.number().int().min(1).optional(),
 });
