@@ -2,6 +2,14 @@
 
 Production-grade email scheduling system built with BullMQ delayed jobs, Redis-backed rate limiting, PostgreSQL persistence, and restart durability.
 
+## 🚀 Live Deployments & URLs
+
+- 🌐 **Live Website (Vercel)**: [https://reachinbox-app-theta.vercel.app](https://reachinbox-app-theta.vercel.app)
+- ⚡ **Live Backend API (Render)**: [https://reachinbox-backend-39mw.onrender.com](https://reachinbox-backend-39mw.onrender.com)
+- 💓 **Backend Health Endpoint**: [https://reachinbox-backend-39mw.onrender.com/health](https://reachinbox-backend-39mw.onrender.com/health)
+
+---
+
 ## Architecture
 
 ```
@@ -36,10 +44,10 @@ Production-grade email scheduling system built with BullMQ delayed jobs, Redis-b
 - [x] **Idempotency** — SHA-256 dedupe key (recipient + subject + scheduledFor), unique DB constraint
 - [x] **Restart durability** — boot-time reconciler re-enqueues orphaned jobs
 - [x] **Postgres as source of truth** — BullMQ/Redis is execution layer only
-- [x] **CSV upload** — auto-detects email column, validates entries
+- [x] **CSV upload & Manual Email Input** — auto-detects email column, validates entries
 - [x] **Multi-sender support** — senders created/upserted on schedule
 - [x] **Ethereal SMTP** — test email sending with preview URLs
-- [x] **Google OAuth** — real NextAuth Google provider
+- [x] **Google OAuth & Demo Account** — real NextAuth Google provider + instant demo login
 - [x] **Configurable** — rate limits, concurrency, delays all via env vars
 
 ## Setup
@@ -50,12 +58,9 @@ Production-grade email scheduling system built with BullMQ delayed jobs, Redis-b
 - Docker + Docker Compose (for Postgres + Redis)
 - Google Cloud OAuth 2.0 credentials
 
-### 1. Clone and install
+### 1. Install Dependencies
 
 ```bash
-git clone <repo-url>
-cd reachinbox
-
 # Backend
 cd backend
 npm install
@@ -82,13 +87,14 @@ This starts PostgreSQL (port 5432) and Redis (port 6379).
 cp .env.example backend/.env
 ```
 
-**Frontend** — create `frontend/.env.local` with only the auth vars:
+**Frontend** — create `frontend/.env.local`:
 ```bash
 cat > frontend/.env.local << 'EOF'
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://reachinbox-app-theta.vercel.app
 NEXTAUTH_SECRET=change-me-to-a-random-string
+BACKEND_URL=https://reachinbox-backend-39mw.onrender.com
 EOF
 ```
 
@@ -108,26 +114,7 @@ EOF
 
 Go to [https://ethereal.email](https://ethereal.email) and click "Create Ethereal Account". Copy the SMTP host, port, username, and password into your backend `.env`.
 
-### 5. Set up Google OAuth
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create an OAuth 2.0 Client ID (Web application)
-3. Add `http://localhost:3000` to Authorized JavaScript origins
-4. Add `http://localhost:3000/api/auth/callback/google` to Authorized redirect URIs
-5. Copy Client ID and Secret to frontend `.env.local`
-
-### 6. Run database migration
-
-```bash
-cd backend
-npx prisma generate
-npx prisma migrate deploy
-cd ..
-```
-
-> If this is your first time and migrations haven't been created yet, use `npx prisma migrate dev --name init` instead.
-
-### 7. Start the application
+### 5. Start the application
 
 ```bash
 # Terminal 1 — Backend
@@ -143,49 +130,6 @@ npm run dev
 - Backend: http://localhost:4000
 - Backend health check: http://localhost:4000/health
 
-## How It Works
-
-### Job Lifecycle
-
-1. User schedules via UI → `POST /api/schedule`
-2. Service generates dedupe key (SHA-256 of recipient+subject+scheduledFor)
-3. Checks DB for existing dedupe key (idempotency)
-4. Creates `EmailJob` in Postgres with status `scheduled`
-5. Enqueues BullMQ delayed job → status becomes `queued`
-6. Worker picks up at scheduled time
-7. Worker checks Redis rate limit (Lua atomic counter)
-   - If allowed → sends via SMTP, writes `SendLog`, status → `sent`
-   - If rate limited → re-enqueues with delay to next window, stays `queued`
-8. On server restart → reconciler finds orphaned `scheduled`/`queued` rows → re-enqueues
-
-### Rate Limiting
-
-Uses a Lua script for atomic increment-and-check on Redis keys. Key pattern: `ratelimit:{senderId}:{hourBucket}`. When the hourly limit is hit, the worker calculates the time remaining in the current window and re-enqueues with that delay + 1s buffer. Jobs are **never** dropped or failed due to rate limiting.
-
-### Idempotency
-
-Each job gets a dedupe key = `SHA-256(recipientEmail | subject | scheduledFor)`. This is stored as a unique column in Postgres. Duplicate schedule requests are rejected both at the service level (pre-check) and at the DB level (unique constraint).
-
-## Assumptions & Trade-offs
-
-1. **Single-process worker**: The worker runs in the same process as the Express server. For production, these should be separate processes. The reconciler handles the restart case.
-
-2. **Ethereal-only SMTP**: No production SMTP configuration. Ethereal is sufficient for demonstration. Swapping to SendGrid/SES would only require changing the transport config.
-
-3. **No per-campaign grouping**: Jobs are individual rows. A campaign abstraction could be added but isn't needed for the core scheduling + rate limiting demo.
-
-4. **Sender = logged-in user's email**: There's no separate sender management UI. The sender is auto-created from the Google OAuth session email on first schedule. This means the "from" address in emails is the user's Google email, which Ethereal accepts but a real SMTP provider would likely reject without domain verification.
-
-5. **Rate limit per sender, not per recipient domain**: Some production systems rate limit per-domain (e.g. max 50/hr to gmail.com). This implementation limits per sender, which is the more common use case for outreach tools. The per-campaign `maxPerHour` from the frontend overrides the env-level default when provided.
-
-6. **Frontend proxy**: Next.js rewrites proxy API calls to the backend. In production, you'd use a reverse proxy (nginx, Cloudflare) instead.
-
-7. **CSV size limit**: 5MB max file size for CSV uploads. Large lead lists should be paginated or streamed.
-
-8. **No email templating engine**: The body is sent as raw HTML. A Handlebars/Mustache layer for `{{name}}` interpolation would be a natural next step.
-
-9. **Rate limit Lua script**: Uses check-before-increment (not increment-then-check) to avoid the race where concurrent workers both increment past the limit. The Lua script is atomic within Redis.
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -196,4 +140,4 @@ Each job gets a dedupe key = `SHA-256(recipientEmail | subject | scheduledFor)`.
 | SMTP | Nodemailer + Ethereal Email |
 | Frontend | Next.js 15, React 19, Tailwind CSS |
 | Auth | NextAuth.js + Google OAuth 2.0 |
-| Infrastructure | Docker Compose (Postgres + Redis) |
+| Deployment | Vercel (Frontend) + Render (Backend, Postgres 18, Valkey Redis 8) |

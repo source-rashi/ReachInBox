@@ -4,22 +4,23 @@ import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-8 p-10">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <div className="text-center space-y-8 p-6 w-full max-w-md">
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             ReachInBox
           </h1>
-          <p className="text-slate-400 text-lg">Email Job Scheduler</p>
+          <p className="text-slate-400 text-sm">Enterprise Email Campaign Scheduler</p>
         </div>
 
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 max-w-sm mx-auto">
-          <p className="text-slate-300 text-sm">
+        <div className="backdrop-blur-xl bg-slate-900/80 border border-slate-800 rounded-2xl p-8 space-y-6 shadow-2xl">
+          <p className="text-slate-300 text-sm font-medium">
             Sign in to manage your email campaigns
           </p>
+
           <button
             onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 hover:shadow-lg hover:shadow-white/10"
+            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-white text-gray-800 rounded-xl font-medium hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -32,7 +33,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-slate-500 text-xs">
-          Powered by BullMQ + Redis rate limiting
+          Production Job Scheduler • Powered by BullMQ & Redis Engine
         </p>
       </div>
     </div>

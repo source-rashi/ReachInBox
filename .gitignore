@@ -5,3 +5,5 @@ dist/
 *.log
 .next/
 coverage/
+.pgdata/
+dump.rdb

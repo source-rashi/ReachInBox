@@ -6,9 +6,13 @@ services:
     rootDir: backend
     buildCommand: npm ci && npm run db:generate && npm run build
     startCommand: npm run db:deploy && npm start
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    startCommand: npx prisma db push --accept-data-loss && npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: reachinbox-db
@@ -19,30 +23,18 @@ services:
           name: reachinbox-redis
           property: connectionString
       - key: FRONTEND_URL
-        sync: false
+        value: https://reachinbox-app-theta.vercel.app
       - key: SMTP_HOST
         value: smtp.ethereal.email
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        sync: false
+        value: cyekcvklhync3xgu@ethereal.email
       - key: SMTP_PASS
-        sync: false
+        value: 3aBG5H9eHyRTEy96BR
       - key: MAX_EMAILS_PER_HOUR_PER_SENDER
         value: "100"
       - key: MIN_DELAY_MS_BETWEEN_SENDS
         value: "2000"
       - key: WORKER_CONCURRENCY
         value: "3"
-
-  - type: redis
-    name: reachinbox-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-    ipAllowList: []
-
-databases:
-  - name: reachinbox-db
-    databaseName: reachinbox
-    user: reachinbox
-    plan: free

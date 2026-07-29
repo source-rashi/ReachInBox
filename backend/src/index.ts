@@ -30,6 +30,15 @@ app.use(
 
 app.use(express.json());
 
+app.get('/', (_req, res) => {
+  res.json({
+    message: 'ReachInBox Backend API Service is running',
+    status: 'ok',
+    frontend: process.env.FRONTEND_URL || 'https://reachinbox-app-theta.vercel.app',
+    healthCheck: '/health'
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
