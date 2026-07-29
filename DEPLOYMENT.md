@@ -54,8 +54,8 @@ This guide outlines how to deploy the **ReachInBox** application:
 - Settings:
   - **Root Directory**: `backend`
   - **Environment**: Node
-  - **Build Command**: `npm install && npm run db:generate && npm run build`
-  - **Start Command**: `npx prisma db push && npm start`
+   - **Build Command**: `npm ci && npm run db:generate && npm run build`
+   - **Start Command**: `npm run db:deploy && npm start`
 - Environment Variables:
   ```env
   DATABASE_URL=<your-internal-postgres-url>
