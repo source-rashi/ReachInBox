@@ -4,7 +4,7 @@ Production-grade email scheduling system built with BullMQ delayed jobs, Redis-b
 
 ## 🚀 Live Deployments & URLs
 
-- 🌐 **Live Website (Vercel)**: [https://reachinbox-app-theta.vercel.app](https://reachinbox-app-theta.vercel.app)
+- 🌐 **Live Website (Vercel)**: [https://reachinbox-frontend-chi.vercel.app](https://reachinbox-frontend-chi.vercel.app)
 - ⚡ **Live Backend API (Render)**: [https://reachinbox-backend-39mw.onrender.com](https://reachinbox-backend-39mw.onrender.com)
 - 💓 **Backend Health Endpoint**: [https://reachinbox-backend-39mw.onrender.com/health](https://reachinbox-backend-39mw.onrender.com/health)
 
